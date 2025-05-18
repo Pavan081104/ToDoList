@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple To-Do App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+  background: url('https://media.istockphoto.com/id/1456363935/photo/hand-holding-pen-planning-to-do-list-on-a-notebook-laptop-and-coffee-cup-on-office-desk.jpg?s=612x612&w=0&k=20&c=Ck6Ax5lou0irnFBJAYcRxDiqcKSUcLHJCCFB2RLYA08=') no-repeat center center fixed;
+  background-size: cover;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+    .todo-container {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .todo-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .todo-item:last-child {
+      border-bottom: none;
+    }
+
+    .todo-actions button {
+      margin-left: 5px;
+    }
+
+    .edit-input {
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  
+  <div class="todo-container">
+    <h3 class="text-center mb-4">To-Do List</h3>
+    <div class="input-group mb-3">
+      <input id="todo-input" type="text" class="form-control" placeholder="Enter a task" />
+      <button class="btn btn-primary" onclick="addTodo()">Add</button>
+    </div>
+    <ul id="todo-list" class="list-unstyled"></ul>
+  </div>
+
+
+  <script>
+    let todos = [];
+
+    document.addEventListener('DOMContentLoaded',async()=>{
+        let data = await fetch('http://localhost:3000',{
+            method :'GET',
+            headers : {'content-type' :'application/json'},
+        })
+        let originalFormat = await data.json();
+        console.log("Data from Database: ",originalFormat);
+
+        originalFormat.map(item => {
+            console.log(item)
+            todos.push({ ID: item.ID,
+                text : item.itemDescription,
+                editing : false
+            });
+            return todos;
+        });
+        renderTodos();
+    })
+
+  
+    function renderTodos() {
+      const list = document.getElementById('todo-list');
+      list.innerHTML = '';
+      todos.forEach((todo, index) => {
+        const li = document.createElement('li');
+        li.className = 'todo-item';
+        if (todo.editing) {
+          li.innerHTML = `
+            <input class="form-control edit-input" type="text" value="${todo.text}" onkeyup="updateTodo(event, ${index})" />
+            <div class="todo-actions">
+              <button class="btn btn-success btn-sm" onclick="saveTodo(${todo.ID})">Save</button>
+            </div>
+          `;
+        } else {
+          li.innerHTML = `
+            <span>${todo.text}</span>
+            <div class="todo-actions">
+              <button class="btn btn-sm btn-warning" onclick="editTodo(${index})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteTodo(${todo.ID})">Delete</button>
+            </div>
+          `;
+        }
+        list.appendChild(li);
+      });
+    }
+
+    function addTodo() {
+        let value= document.getElementById('todo-input');
+        let text=value.value;
+        fetch('http://localhost:3000/add-item', {
+            method : 'POST',
+            headers: { 'content-type' : 'application/json' },
+            body : JSON.stringify({text})
+
+        }).then(() => {
+    window.location.reload();
+  });
+    }
+
+    function deleteTodo(ID) {
+  console.log('Deleting ID:', ID);  // Debug log
+  fetch('http://localhost:3000/delete-item', {
+    method: 'DELETE',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ID })
+  }).then(() => {
+    window.location.reload();
+  });
+}
+
+    function editTodo(index) {
+      todos[index].editing = true;
+      renderTodos();
+    }
+
+    function saveTodo(ID) {
+    // Find the input element for the edited todo
+    const input = document.querySelector('.edit-input');
+    const updatedText = input.value;
+
+    fetch('http://localhost:3000/update-item', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ID: ID, itemDescription: updatedText })
+    }).then(() => {
+        window.location.reload();
+    });
+}
+
+  </script>
+</body>
+
+</html>
