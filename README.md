@@ -3,6 +3,6 @@ A simple and intuitive To-Do List web application to manage daily tasks efficien
  Add, edit, and delete tasks
  Local storage / Database integration for persistence
 #Technologies Used
-HTML, CSS
+Frontend: HTML, CSS
 Backend: Node.js + Express 
 Database: MySQL 
